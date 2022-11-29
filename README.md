@@ -10,3 +10,9 @@ Because I am too lazy to find new songs.
 
 I love Spotify's curated playlists. So I created a CI which scans for new songs in those and adds them to a monthly
 updating digest! 
+
+## TODO
+
+- [x] Implement basic functions
+- [ ] Make the fucking CI (urgent)
+- [ ] Automatic monthly playlist creation
