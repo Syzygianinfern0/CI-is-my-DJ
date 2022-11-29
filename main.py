@@ -4,20 +4,13 @@ from argparse import ArgumentParser
 
 import gspread
 import spotipy
+from ordered_set import OrderedSet
 from spotipy.oauth2 import SpotifyClientCredentials
 
 SOURCES = {
     "Today's Top Hits": "37i9dQZF1DXcBWIGoYBM5M",
     "Teen Beats": "37i9dQZF1DWWvvyNmW9V9a",
 }
-
-
-def sheets_get_values(worksheet):
-    return worksheet.get_values()
-
-
-def sheets_set_values(worksheet, values):
-    return worksheet.update("A1", values)
 
 
 def get_all_tracks(sp, playlist):
@@ -44,8 +37,9 @@ def main():
     # Read Database
     gc = gspread.service_account(filename=args.c)
     worksheet = gc.open("CI Is My DJ").sheet1
-    values = sheets_get_values(worksheet)
-    print(f"Found {len(values)} entries in DB")
+    db_tracks = worksheet.get_values()
+    db_tracks = OrderedSet([tuple(track) for track in db_tracks])
+    print(f"Found {len(db_tracks)} entries in DB")
 
     # Aggregate all songs
     creds = json.load(open("credentials.json"))
@@ -54,14 +48,18 @@ def main():
     tracks = [get_all_tracks(sp, playlist) for playlist in SOURCES.values()]
     tracks = itertools.chain.from_iterable(tracks)
     tracks = [[each["track"]["external_urls"]["spotify"], each["track"]["name"]] for each in tracks]
-    tracks = list(set([tuple(track) for track in tracks]))  # remove duplicates
+    tracks = OrderedSet([tuple(track) for track in tracks])  # remove duplicates
     print(f"Found {len(tracks)} tracks in total")
 
     # Find new songs
+    new_tracks = tracks - db_tracks
+    print(f"Found {len(new_tracks)} new tracks in total")
 
     # Update Playlist
 
     # Update DB
+    worksheet.update(f"A{len(db_tracks) + 1}", new_tracks.items)
+    print(f"Updated database with {len(new_tracks)} tracks")
 
 
 if __name__ == "__main__":
