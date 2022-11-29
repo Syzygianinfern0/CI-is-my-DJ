@@ -5,12 +5,15 @@ from argparse import ArgumentParser
 import gspread
 import spotipy
 from ordered_set import OrderedSet
-from spotipy.oauth2 import SpotifyClientCredentials
+from spotipy.oauth2 import SpotifyClientCredentials, SpotifyOAuth
 
 SOURCES = {
     "Today's Top Hits": "37i9dQZF1DXcBWIGoYBM5M",
     "Teen Beats": "37i9dQZF1DWWvvyNmW9V9a",
+    "Interstellar Navigation": "0tlLhWbCZ0IMYsYHjDlWxX",
 }
+
+TARGET = "53czPuORoRkVxKgQCBz4b6"
 
 
 def get_all_tracks(sp, playlist):
@@ -56,6 +59,14 @@ def main():
     print(f"Found {len(new_tracks)} new tracks in total")
 
     # Update Playlist
+    # TODO: Implement checking for DB and playlists
+    scope = "playlist-modify-public"
+    sp = spotipy.Spotify(auth_manager=SpotifyOAuth(id, secret, "http://example.com", scope=scope))
+    urls = [each[0] for each in new_tracks.items]
+    [sp.playlist_add_items(TARGET, urls[idx : idx + 100]) for idx in range(0, len(urls), 100)]
+    print(f"Updated target playlist with {len(new_tracks)} tracks")
+
+    # TODO: Implement monthly digests
 
     # Update DB
     worksheet.update(f"A{len(db_tracks) + 1}", new_tracks.items)
