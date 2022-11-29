@@ -15,6 +15,12 @@ jobs:
         with:
           name: "credentials.json"
           json: ${{ secrets.CREDENTIALS }}
+      - name: create-json
+        id: create-json
+        uses: jsdaniell/create-json@v1.2.1
+        with:
+          name: ".cache"
+          json: ${{ secrets.CACHE }}
       - name: Install Python dependencies
         uses: py-actions/py-dependency-install@v4
       - name: DJ Time
