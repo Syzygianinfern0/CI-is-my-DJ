@@ -15,7 +15,7 @@ jobs:
         with:
           name: "credentials.json"
           json: ${{ secrets.CREDENTIALS }}
-      - name: create-json
+      - name: create-cache
         id: create-json
         uses: jsdaniell/create-json@v1.2.1
         with:
