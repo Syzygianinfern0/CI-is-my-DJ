@@ -14,5 +14,5 @@ updating digest!
 ## TODO
 
 - [x] Implement basic functions
-- [ ] Make the fucking CI (urgent)
+- [x] Make the fucking CI (urgent)
 - [ ] Automatic monthly playlist creation

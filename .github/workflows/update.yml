@@ -1,0 +1,20 @@
+name: DJ Time
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *'
+jobs:
+  run-sync-service:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+      - name: create-json
+        id: create-json
+        uses: jsdaniell/create-json@v1.2.1
+        with:
+          name: "credentials.json"
+          json: ${{ secrets.CREDENTIALS }}
+      - name: DJ Time
+        run: |
+          python3 main.py
