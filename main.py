@@ -9,8 +9,17 @@ from spotipy.oauth2 import SpotifyClientCredentials, SpotifyOAuth
 
 SOURCES = {
     "Today's Top Hits": "37i9dQZF1DXcBWIGoYBM5M",
+    "Sad Songs": "37i9dQZF1DX7qK8ma5wgG1",
     "Teen Beats": "37i9dQZF1DWWvvyNmW9V9a",
-    "Interstellar Navigation": "0tlLhWbCZ0IMYsYHjDlWxX",
+    "Night Pop": "37i9dQZF1DXbcP8BbYEQaO",
+    "Sad Bops": "37i9dQZF1DWZUAeYvs88zc",
+    "Mellow Pop": "37i9dQZF1DWYp3yzk1civi",
+    "songs to scream in the car": "37i9dQZF1DX4mWCZw6qYIw",
+    "Pop Party": "37i9dQZF1DWXti3N4Wp5xy",
+    "Soft Pop Hits": "37i9dQZF1DWTwnEm1IYyoj",
+    "Pop Sauce": "37i9dQZF1DXaPCIWxzZwR1",
+    "Chill Pop": "37i9dQZF1DX0MLFaUdXnjA",
+    "Love Pop": "37i9dQZF1DX50QitC6Oqtn",
 }
 
 TARGET = "53czPuORoRkVxKgQCBz4b6"
@@ -64,9 +73,11 @@ def main():
     sp = spotipy.Spotify(auth_manager=SpotifyOAuth(id, secret, "http://example.com", scope=scope))
     urls = [each[0] for each in new_tracks.items]
     [sp.playlist_add_items(TARGET, urls[idx : idx + 100]) for idx in range(0, len(urls), 100)]
-    print(f"Updated target playlist with {len(new_tracks)} tracks")
 
-    # TODO: Implement monthly digests
+    # TODO: Implement auto monthly digests
+    dec_id = "2emmetze5gmxnAhF2mt0x6"
+    [sp.playlist_add_items(dec_id, urls[idx : idx + 100]) for idx in range(0, len(urls), 100)]
+    print(f"Updated target playlist with {len(new_tracks)} tracks")
 
     # Update DB
     worksheet.update(f"A{len(db_tracks) + 1}", new_tracks.items)
