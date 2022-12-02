@@ -15,4 +15,4 @@ updating digest!
 
 - [x] Implement basic functions
 - [x] Make the fucking CI (urgent)
-- [ ] Automatic monthly playlist creation
+- [x] Automatic monthly playlist creation

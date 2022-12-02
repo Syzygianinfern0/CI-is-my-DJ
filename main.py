@@ -1,6 +1,7 @@
 import json
 from argparse import ArgumentParser
 from collections import OrderedDict
+from datetime import datetime
 
 import gspread
 import spotipy
@@ -22,6 +23,7 @@ SOURCES = {
 }
 
 TARGET = "53czPuORoRkVxKgQCBz4b6"
+USER = "djnkqfurl9v8ewx0mxpr68znh"
 
 
 def get_all_tracks(sp, playlist):
@@ -82,9 +84,21 @@ def main():
             urls = [each[0] for each in list(db_tracks.items())[new_idx[0] :]]
             [sp.playlist_add_items(TARGET, urls[idx : idx + 100]) for idx in range(0, len(urls), 100)]
 
-            # TODO: Implement auto monthly digests
-            dec_id = "2emmetze5gmxnAhF2mt0x6"
-            [sp.playlist_add_items(dec_id, urls[idx : idx + 100]) for idx in range(0, len(urls), 100)]
+        current_playlist_name = datetime.now().strftime("%y.%m")
+        month_playlist = list(
+            filter(lambda i: i["name"] == datetime.now().strftime("%y.%m"), sp.user_playlists(USER)["items"])
+        )
+        if len(month_playlist):
+            month_playlist = month_playlist[0]
+        else:
+            month_playlist = sp.user_playlist_create(
+                USER,
+                current_playlist_name,
+                public=True,
+                description="Automatic playlist created by https://github.com/Syzygianinfern0/CI-is-my-DJ",
+            )
+        month_playlist = month_playlist["id"]
+        [sp.playlist_add_items(month_playlist, urls[idx : idx + 100]) for idx in range(0, len(urls), 100)]
 
         # Update DB
         if len(new_idx):
