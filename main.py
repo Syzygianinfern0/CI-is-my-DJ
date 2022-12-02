@@ -5,7 +5,7 @@ from argparse import ArgumentParser
 import gspread
 import spotipy
 from ordered_set import OrderedSet
-from spotipy.oauth2 import SpotifyClientCredentials, SpotifyOAuth
+from spotipy.oauth2 import SpotifyOAuth
 
 SOURCES = {
     "Today's Top Hits": "37i9dQZF1DXcBWIGoYBM5M",
@@ -38,6 +38,8 @@ def parse_args():
     parser = ArgumentParser()
     parser.add_argument("-i", default="CI Is My DJ", help="Name of Sheet")
     parser.add_argument("-c", default="credentials.json", help="Path to credentials.json")
+    parser.add_argument("-d", help="Dry run", action="store_true")
+
     args = parser.parse_args()
 
     return args
@@ -56,32 +58,32 @@ def main():
     # Aggregate all songs
     creds = json.load(open("credentials.json"))
     id, secret = creds["spotify_client_id"], creds["spotify_client_secret"]
-    sp = spotipy.Spotify(auth_manager=SpotifyClientCredentials(id, secret))
+    scope = "playlist-modify-public"
+    sp = spotipy.Spotify(auth_manager=SpotifyOAuth(id, secret, "http://example.com", scope=scope))
     tracks = [get_all_tracks(sp, playlist) for playlist in SOURCES.values()]
     tracks = itertools.chain.from_iterable(tracks)
     tracks = [[each["track"]["external_urls"]["spotify"], each["track"]["name"]] for each in tracks]
     tracks = OrderedSet([tuple(track) for track in tracks])  # remove duplicates
-    print(f"Found {len(tracks)} tracks in total")
+    print(f"Scraped {len(tracks)} unique tracks in total")
 
     # Find new songs
     new_tracks = tracks - db_tracks
     print(f"Found {len(new_tracks)} new tracks in total")
 
-    # Update Playlist
-    # TODO: Implement checking for DB and playlists
-    scope = "playlist-modify-public"
-    sp = spotipy.Spotify(auth_manager=SpotifyOAuth(id, secret, "http://example.com", scope=scope))
-    urls = [each[0] for each in new_tracks.items]
-    [sp.playlist_add_items(TARGET, urls[idx : idx + 100]) for idx in range(0, len(urls), 100)]
+    if not args.d:
+        # Update Playlist
+        # TODO: Implement checking for DB and playlists
+        urls = [each[0] for each in new_tracks.items]
+        [sp.playlist_add_items(TARGET, urls[idx : idx + 100]) for idx in range(0, len(urls), 100)]
 
-    # TODO: Implement auto monthly digests
-    dec_id = "2emmetze5gmxnAhF2mt0x6"
-    [sp.playlist_add_items(dec_id, urls[idx : idx + 100]) for idx in range(0, len(urls), 100)]
-    print(f"Updated target playlist with {len(new_tracks)} tracks")
+        # TODO: Implement auto monthly digests
+        # dec_id = "2emmetze5gmxnAhF2mt0x6"
+        # [sp.playlist_add_items(dec_id, urls[idx : idx + 100]) for idx in range(0, len(urls), 100)]
+        # print(f"Updated target playlist with {len(new_tracks)} tracks")
 
-    # Update DB
-    worksheet.update(f"A{len(db_tracks) + 1}", new_tracks.items)
-    print(f"Updated database with {len(new_tracks)} tracks")
+        # Update DB
+        worksheet.update(f"A{len(db_tracks) + 1}", new_tracks.items)
+        print(f"Updated database and playlists with {len(new_tracks)} new tracks")
 
 
 if __name__ == "__main__":
