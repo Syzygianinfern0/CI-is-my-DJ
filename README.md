@@ -1,3 +1,5 @@
+
+![Logo](ci-is-my-dj.png)
 # CI is my DJ
 
 > Cuz why not lmao
