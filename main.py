@@ -84,24 +84,23 @@ def main():
             urls = [each[0] for each in list(db_tracks.items())[new_idx[0] :]]
             [sp.playlist_add_items(TARGET, urls[idx : idx + 100]) for idx in range(0, len(urls), 100)]
 
-        current_playlist_name = datetime.now().strftime("%y.%m")
-        month_playlist = list(
-            filter(lambda i: i["name"] == datetime.now().strftime("%y.%m"), sp.user_playlists(USER)["items"])
-        )
-        if len(month_playlist):
-            month_playlist = month_playlist[0]
-        else:
-            month_playlist = sp.user_playlist_create(
-                USER,
-                current_playlist_name,
-                public=True,
-                description="Automatic playlist created by https://github.com/Syzygianinfern0/CI-is-my-DJ",
+            current_playlist_name = datetime.now().strftime("%y.%m")
+            month_playlist = list(
+                filter(lambda i: i["name"] == datetime.now().strftime("%y.%m"), sp.user_playlists(USER)["items"])
             )
-        month_playlist = month_playlist["id"]
-        [sp.playlist_add_items(month_playlist, urls[idx : idx + 100]) for idx in range(0, len(urls), 100)]
+            if len(month_playlist):
+                month_playlist = month_playlist[0]
+            else:
+                month_playlist = sp.user_playlist_create(
+                    USER,
+                    current_playlist_name,
+                    public=True,
+                    description="Automatic playlist created by https://github.com/Syzygianinfern0/CI-is-my-DJ",
+                )
+            month_playlist = month_playlist["id"]
+            [sp.playlist_add_items(month_playlist, urls[idx : idx + 100]) for idx in range(0, len(urls), 100)]
 
-        # Update DB
-        if len(new_idx):
+            # Update DB
             worksheet.update(
                 f"A{new_idx[0] + 1}",
                 [
@@ -109,15 +108,15 @@ def main():
                     for each in [[key, *value] for key, value in list(db_tracks.items())[new_idx[0] :]]
                 ],
             )
-        updated_idx = list(set(updated_idx) - set(new_idx))
-        for idx in updated_idx:
-            worksheet.update(
-                f"A{idx + 1}",
-                [
-                    [each[0], each[1], *each[2]]
-                    for each in [[key, *value] for key, value in [list(db_tracks.items())[idx]]]
-                ],
-            )
+            updated_idx = list(set(updated_idx) - set(new_idx))
+            for idx in updated_idx:
+                worksheet.update(
+                    f"A{idx + 1}",
+                    [
+                        [each[0], each[1], *each[2]]
+                        for each in [[key, *value] for key, value in [list(db_tracks.items())[idx]]]
+                    ],
+                )
         print(f"Updated database and playlists with {len(new_idx)} new tracks and {len(updated_idx)} updates")
 
 
