@@ -69,7 +69,10 @@ def main():
         playlist_name = sp.playlist(playlist)["name"]
         tracks = get_all_tracks(sp, playlist)
         for track in tracks:
-            url = track["track"]["external_urls"]["spotify"]
+            try:
+                url = track["track"]["external_urls"]["spotify"]
+            except TypeError:  # sometimes the track is None (idk why)
+                continue
             if url in db_tracks.keys():
                 if playlist_name not in db_tracks[url][1]:
                     db_tracks[url][1].append(playlist_name)
