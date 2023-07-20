@@ -9,21 +9,22 @@ from spotipy.oauth2 import SpotifyOAuth
 
 SOURCES = {
     "Today's Top Hits": "37i9dQZF1DXcBWIGoYBM5M",
-    "Sad Songs": "37i9dQZF1DX7qK8ma5wgG1",
+    # "Sad Songs": "37i9dQZF1DX7qK8ma5wgG1",
     "Teen Beats": "37i9dQZF1DWWvvyNmW9V9a",
-    "Night Pop": "37i9dQZF1DXbcP8BbYEQaO",
-    "Sad Bops": "37i9dQZF1DWZUAeYvs88zc",
-    "Mellow Pop": "37i9dQZF1DWYp3yzk1civi",
-    "songs to scream in the car": "37i9dQZF1DX4mWCZw6qYIw",
-    "Pop Party": "37i9dQZF1DWXti3N4Wp5xy",
-    "Soft Pop Hits": "37i9dQZF1DWTwnEm1IYyoj",
-    "Pop Sauce": "37i9dQZF1DXaPCIWxzZwR1",
-    "Chill Pop": "37i9dQZF1DX0MLFaUdXnjA",
-    "Love Pop": "37i9dQZF1DX50QitC6Oqtn",
+    # "Night Pop": "37i9dQZF1DXbcP8BbYEQaO",
+    # "Sad Bops": "37i9dQZF1DWZUAeYvs88zc",
+    # "Mellow Pop": "37i9dQZF1DWYp3yzk1civi",
+    # "songs to scream in the car": "37i9dQZF1DX4mWCZw6qYIw",
+    # "Pop Party": "37i9dQZF1DWXti3N4Wp5xy",
+    # "Soft Pop Hits": "37i9dQZF1DWTwnEm1IYyoj",
+    # "Pop Sauce": "37i9dQZF1DXaPCIWxzZwR1",
+    # "Chill Pop": "37i9dQZF1DX0MLFaUdXnjA",
+    # "Love Pop": "37i9dQZF1DX50QitC6Oqtn",
 }
 
-TARGET = "53czPuORoRkVxKgQCBz4b6"
-USER = "djnkqfurl9v8ewx0mxpr68znh"
+# TARGET = "53czPuORoRkVxKgQCBz4b6"  # master playlist
+TARGET = "2RZzznHHpUvcDwyhBEINtB"
+# USER = "djnkqfurl9v8ewx0mxpr68znh"
 
 
 def get_all_tracks(sp, playlist):
@@ -33,6 +34,15 @@ def get_all_tracks(sp, playlist):
         results = sp.next(results)
         tracks.extend(results["items"])
     return tracks
+
+
+def get_all_playlists(sp, user):
+    results = sp.user_playlists(user)
+    playlists = results["items"]
+    while results["next"]:
+        results = sp.next(results)
+        playlists.extend(results["items"])
+    return playlists
 
 
 def parse_args():
@@ -85,17 +95,19 @@ def main():
         # Update Playlist
         if len(new_idx):
             urls = [each[0] for each in list(db_tracks.items())[new_idx[0] :]]
+            # update master playlist
+            sp.playlist
             [sp.playlist_add_items(TARGET, urls[idx : idx + 100]) for idx in range(0, len(urls), 100)]
+            user = sp.current_user()["id"]
 
+            # update month playlist
             current_playlist_name = datetime.now().strftime("%y.%m")
-            month_playlist = list(
-                filter(lambda i: i["name"] == datetime.now().strftime("%y.%m"), sp.user_playlists(USER)["items"])
-            )
+            month_playlist = list(filter(lambda i: i["name"] == current_playlist_name, get_all_playlists(sp, user)))
             if len(month_playlist):
                 month_playlist = month_playlist[0]
             else:
                 month_playlist = sp.user_playlist_create(
-                    USER,
+                    user,
                     current_playlist_name,
                     public=True,
                     description="Automatic playlist created by https://github.com/Syzygianinfern0/CI-is-my-DJ",

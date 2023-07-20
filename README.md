@@ -18,3 +18,7 @@ updating digest!
 - [x] Implement basic functions
 - [x] Make the fucking CI (urgent)
 - [x] Automatic monthly playlist creation
+
+## Usage
+
+Get a credentials.json by (1) enable google drive api, (2) create service account, (3) json key for serivce account
