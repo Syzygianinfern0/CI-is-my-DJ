@@ -6,6 +6,7 @@ from datetime import datetime
 import gspread
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
+from spotipy_anon import SpotifyAnon
 
 SOURCES = {
     "Today's Top Hits": "37i9dQZF1DXcBWIGoYBM5M",
@@ -72,12 +73,15 @@ def main():
     id, secret = creds["spotify_client_id"], creds["spotify_client_secret"]
     scope = "playlist-modify-public"
     sp = spotipy.Spotify(auth_manager=SpotifyOAuth(id, secret, "http://example.com", scope=scope))
+    sp_anon = spotipy.Spotify(auth_manager=SpotifyAnon())
 
     updated_idx = []
     new_idx = []
     for playlist in SOURCES.values():
-        playlist_name = sp.playlist(playlist)["name"]
-        tracks = get_all_tracks(sp, playlist)
+        # playlist_name = sp.playlist(playlist)["name"]
+        playlist_name = sp_anon.playlist(playlist)["name"]
+        # tracks = get_all_tracks(sp, playlist)
+        tracks = get_all_tracks(sp_anon, playlist)
         for track in tracks:
             try:
                 url = track["track"]["external_urls"]["spotify"]
@@ -102,7 +106,10 @@ def main():
 
             # update month playlist
             current_playlist_name = datetime.now().strftime("%y.%m")
-            month_playlist = list(filter(lambda i: i["name"] == current_playlist_name, get_all_playlists(sp, user)))
+            # month_playlist = list(filter(lambda i: i["name"] == current_playlist_name, get_all_playlists(sp, user)))
+            month_playlist = [
+                i for i in get_all_playlists(sp, user) if i is not None and i["name"] == current_playlist_name
+            ]
             if len(month_playlist):
                 month_playlist = month_playlist[0]
             else:
