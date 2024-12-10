@@ -6,12 +6,19 @@
 
 ## Why?
 
-Because I am too lazy to find new songs.
+Because I am too lazy to find new songs. I want to automate the process of finding new songs and adding them to a playlist.
 
 ## How?
 
-I love Spotify's curated playlists. So I created a CI which scans for new songs in those and adds them to a monthly
-updating digest!
+I love Spotify's curated playlists (Today's Top Hits, Teen Beats, etc.). So I created a script which scans for new songs in those and adds them to a monthly updating digest! This is run as a GitHub Action every day right here.
+
+<p align="center">
+    <a href="https://docs.google.com/spreadsheets/d/18B2xp9Oi4o4ZBESBdRpoedA4T9CItZDkxEYxy_s-wBc/edit?usp=sharing">Google Sheets as the database</a>
+</p>
+
+<p align="center">
+    <a href="https://open.spotify.com/user/djnkqfurl9v8ewx0mxpr68znh?si=ptZitSAETluyE3TtGrj59w">Playlists are public on my Spotify Profile</a>
+</p>
 
 ## TODO
 
