@@ -4,9 +4,11 @@ from collections import OrderedDict
 from datetime import datetime
 
 import gspread
+import requests
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
-from spotipy_anon import SpotifyAnon
+
+from spotify_web import SpotifyWeb
 
 SOURCES = {
     "Today's Top Hits": "37i9dQZF1DXcBWIGoYBM5M",
@@ -28,6 +30,18 @@ TARGET = "2RZzznHHpUvcDwyhBEINtB"
 # USER = "djnkqfurl9v8ewx0mxpr68znh"
 
 
+def playlist_add_items(sp, playlist_id, uris):
+    """Add tracks using the current /items endpoint (spotipy still calls the deprecated /tracks)."""
+    token = sp.auth_manager.get_access_token(as_dict=False)
+    for i in range(0, len(uris), 100):
+        resp = requests.post(
+            f"https://api.spotify.com/v1/playlists/{playlist_id}/items",
+            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+            json={"uris": [f"spotify:track:{u.split('/')[-1]}" for u in uris[i : i + 100]]},
+        )
+        resp.raise_for_status()
+
+
 def get_all_tracks(sp, playlist):
     results = sp.playlist_items(playlist)
     tracks = results["items"]
@@ -37,13 +51,24 @@ def get_all_tracks(sp, playlist):
     return tracks
 
 
-def get_all_playlists(sp, user):
-    results = sp.user_playlists(user)
+def get_all_playlists(sp):
+    results = sp.current_user_playlists()
     playlists = results["items"]
     while results["next"]:
         results = sp.next(results)
         playlists.extend(results["items"])
     return playlists
+
+
+def create_playlist(sp, name, public=True, description=""):
+    token = sp.auth_manager.get_access_token(as_dict=False)
+    resp = requests.post(
+        "https://api.spotify.com/v1/me/playlists",
+        headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+        json={"name": name, "public": public, "description": description},
+    )
+    resp.raise_for_status()
+    return resp.json()
 
 
 def parse_args():
@@ -71,17 +96,15 @@ def main():
     # Aggregate all songs
     creds = json.load(open("credentials.json"))
     id, secret = creds["spotify_client_id"], creds["spotify_client_secret"]
-    scope = "playlist-modify-public"
-    sp = spotipy.Spotify(auth_manager=SpotifyOAuth(id, secret, "http://example.com", scope=scope))
-    sp_anon = spotipy.Spotify(auth_manager=SpotifyAnon())
+    scope = "playlist-modify-public playlist-read-private"
+    sp = spotipy.Spotify(auth_manager=SpotifyOAuth(id, secret, "http://127.0.0.1:8888/callback", scope=scope))
+    sp_web = SpotifyWeb()
 
     updated_idx = []
     new_idx = []
     for playlist in SOURCES.values():
-        # playlist_name = sp.playlist(playlist)["name"]
-        playlist_name = sp_anon.playlist(playlist)["name"]
-        # tracks = get_all_tracks(sp, playlist)
-        tracks = get_all_tracks(sp_anon, playlist)
+        playlist_name = sp_web.get_playlist_name(playlist)
+        tracks = sp_web.get_all_tracks(playlist)
         for track in tracks:
             try:
                 url = track["track"]["external_urls"]["spotify"]
@@ -100,27 +123,22 @@ def main():
         if len(new_idx):
             urls = [each[0] for each in list(db_tracks.items())[new_idx[0] :]]
             # update master playlist
-            sp.playlist
-            [sp.playlist_add_items(TARGET, urls[idx : idx + 100]) for idx in range(0, len(urls), 100)]
-            user = sp.current_user()["id"]
+            playlist_add_items(sp, TARGET, urls)
 
             # update month playlist
             current_playlist_name = datetime.now().strftime("%y.%m")
             # month_playlist = list(filter(lambda i: i["name"] == current_playlist_name, get_all_playlists(sp, user)))
-            month_playlist = [
-                i for i in get_all_playlists(sp, user) if i is not None and i["name"] == current_playlist_name
-            ]
+            month_playlist = [i for i in get_all_playlists(sp) if i is not None and i["name"] == current_playlist_name]
             if len(month_playlist):
                 month_playlist = month_playlist[0]
             else:
-                month_playlist = sp.user_playlist_create(
-                    user,
+                month_playlist = create_playlist(
+                    sp,
                     current_playlist_name,
-                    public=True,
                     description="Automatic playlist created by https://github.com/Syzygianinfern0/CI-is-my-DJ",
                 )
             month_playlist = month_playlist["id"]
-            [sp.playlist_add_items(month_playlist, urls[idx : idx + 100]) for idx in range(0, len(urls), 100)]
+            playlist_add_items(sp, month_playlist, urls)
 
             # Update DB
             worksheet.update(
