@@ -8,21 +8,40 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v3
-      - name: create-json
-        id: create-json
-        uses: jsdaniell/create-json@v1.2.1
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
         with:
-          name: "credentials.json"
-          json: ${{ secrets.CREDENTIALS }}
-      - name: create-cache
-        id: create-cache
-        uses: jsdaniell/create-json@v1.2.1
-        with:
-          name: ".cache"
-          json: ${{ secrets.CACHE }}
+          python-version: '3.12'
+          cache: pip
+
       - name: Install Python dependencies
-        uses: py-actions/py-dependency-install@v4
-      - name: DJ Time
+        run: pip install -r requirements.txt
+
+      - name: Write credentials and token cache
+        env:
+          CREDENTIALS: ${{ secrets.CREDENTIALS }}
+          CACHE: ${{ secrets.CACHE }}
         run: |
-          python3 main.py
+          printf '%s' "$CREDENTIALS" > credentials.json
+          printf '%s' "$CACHE" > .cache
+          cp .cache "$RUNNER_TEMP/cache.orig"
+
+      - name: DJ Time
+        run: python main.py
+
+      # Spotipy rewrites .cache whenever it refreshes the access token. Save it back
+      # to the CACHE secret so the stored refresh token never goes stale.
+      - name: Persist refreshed Spotify token
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.SECRETS_PAT }}
+        run: |
+          if [ ! -s .cache ] || cmp -s .cache "$RUNNER_TEMP/cache.orig"; then
+            echo "Token cache unchanged; nothing to persist."
+            exit 0
+          fi
+          python -c "import json; json.load(open('.cache'))"
+          gh secret set CACHE --repo "$GITHUB_REPOSITORY" < .cache
+          echo "Updated CACHE secret."
