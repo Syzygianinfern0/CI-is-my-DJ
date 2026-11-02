@@ -98,6 +98,9 @@ def main():
     id, secret = creds["spotify_client_id"], creds["spotify_client_secret"]
     scope = "playlist-modify-public playlist-read-private"
     sp = spotipy.Spotify(auth_manager=SpotifyOAuth(id, secret, "http://127.0.0.1:8888/callback", scope=scope))
+    # Refresh the token every run, even with no new tracks, so CI can persist the
+    # updated .cache back to the CACHE secret and the refresh token never goes stale.
+    sp.auth_manager.get_access_token(as_dict=False)
     sp_web = SpotifyWeb()
 
     updated_idx = []
