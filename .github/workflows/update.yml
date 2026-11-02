@@ -10,14 +10,13 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@v7
 
-      - name: Set up Python
-        uses: actions/setup-python@v7
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v10.3.3
         with:
-          python-version: '3.12'
-          cache: pip
+          enable-cache: true
 
       - name: Install Python dependencies
-        run: pip install -r requirements.txt
+        run: uv sync --locked
 
       - name: Write credentials and token cache
         env:
@@ -29,7 +28,7 @@ jobs:
           cp .cache "$RUNNER_TEMP/cache.orig"
 
       - name: DJ Time
-        run: python main.py
+        run: uv run main.py
 
       # Spotipy rewrites .cache whenever it refreshes the access token. Save it back
       # to the CACHE secret so the stored refresh token never goes stale.
@@ -42,6 +41,6 @@ jobs:
             echo "Token cache unchanged; nothing to persist."
             exit 0
           fi
-          python -c "import json; json.load(open('.cache'))"
+          uv run python -c "import json; json.load(open('.cache'))"
           gh secret set CACHE --repo "$GITHUB_REPOSITORY" < .cache
           echo "Updated CACHE secret."

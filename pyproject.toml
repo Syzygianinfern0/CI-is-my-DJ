@@ -1,0 +1,9 @@
+[project]
+name = "ci-is-my-dj"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "gspread==5.7.1",
+    "requests>=2.34.2",
+    "spotipy>=2.26.0",
+]
