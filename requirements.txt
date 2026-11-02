@@ -1,4 +1,3 @@
 gspread==5.7.1
 ordered_set
 spotipy
-spotipy-anon
