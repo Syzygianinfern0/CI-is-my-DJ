@@ -29,3 +29,17 @@ I love Spotify's curated playlists (Today's Top Hits, Teen Beats, etc.). So I cr
 ## Usage
 
 Get a credentials.json by (1) enable google drive api, (2) create service account, (3) json key for serivce account
+
+### Running locally
+
+Install [uv](https://docs.astral.sh/uv/), then `uv sync` and `uv run main.py` (add `-d` for a dry run).
+
+### Refreshing the Spotify login
+
+Spotify refresh tokens expire after about 6 months. When that happens the action fails with `Spotify login failed`. To fix it, log in again locally and upload the new token cache:
+
+```
+rm .cache
+uv run python -c "import json, spotipy; from spotipy.oauth2 import SpotifyOAuth; c = json.load(open('credentials.json')); spotipy.Spotify(auth_manager=SpotifyOAuth(c['spotify_client_id'], c['spotify_client_secret'], 'http://127.0.0.1:8888/callback', scope='playlist-modify-public playlist-read-private')).me()"
+gh secret set CACHE < .cache
+```

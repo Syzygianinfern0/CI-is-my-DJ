@@ -25,22 +25,6 @@ jobs:
         run: |
           printf '%s' "$CREDENTIALS" > credentials.json
           printf '%s' "$CACHE" > .cache
-          cp .cache "$RUNNER_TEMP/cache.orig"
 
       - name: DJ Time
         run: uv run main.py
-
-      # Spotipy rewrites .cache whenever it refreshes the access token. Save it back
-      # to the CACHE secret so the stored refresh token never goes stale.
-      - name: Persist refreshed Spotify token
-        if: always()
-        env:
-          GH_TOKEN: ${{ secrets.SECRETS_PAT }}
-        run: |
-          if [ ! -s .cache ] || cmp -s .cache "$RUNNER_TEMP/cache.orig"; then
-            echo "Token cache unchanged; nothing to persist."
-            exit 0
-          fi
-          uv run python -c "import json; json.load(open('.cache'))"
-          gh secret set CACHE --repo "$GITHUB_REPOSITORY" < .cache
-          echo "Updated CACHE secret."

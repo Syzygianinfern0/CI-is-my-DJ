@@ -6,6 +6,7 @@ from datetime import datetime
 import gspread
 import requests
 import spotipy
+from spotipy.exceptions import SpotifyOauthError
 from spotipy.oauth2 import SpotifyOAuth
 
 from spotify_web import SpotifyWeb
@@ -98,9 +99,15 @@ def main():
     id, secret = creds["spotify_client_id"], creds["spotify_client_secret"]
     scope = "playlist-modify-public playlist-read-private"
     sp = spotipy.Spotify(auth_manager=SpotifyOAuth(id, secret, "http://127.0.0.1:8888/callback", scope=scope))
-    # Refresh the token every run, even with no new tracks, so CI can persist the
-    # updated .cache back to the CACHE secret and the refresh token never goes stale.
-    sp.auth_manager.get_access_token(as_dict=False)
+    # Check the login on every run, not just on days with new tracks, so an expired
+    # refresh token (Spotify expires them after ~6 months) is caught right away.
+    try:
+        sp.auth_manager.get_access_token(as_dict=False)
+    except SpotifyOauthError as e:
+        raise SystemExit(
+            f"Spotify login failed ({e.error_description}). Log in again and update the CACHE secret; "
+            "see 'Refreshing the Spotify login' in README.md."
+        )
     sp_web = SpotifyWeb()
 
     updated_idx = []
